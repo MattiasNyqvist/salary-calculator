@@ -29,21 +29,21 @@ Data types:
 """
     
     # Create prompt
-    prompt = f"""Du är en expert på Pandas och data-analys. Jag har en lönedata dataframe och vill att du genererar Python-kod för att svara på frågan.
+    prompt = f"""You are an expert in Pandas and data analysis. I have a salary dataframe and I want you to generate Python code to answer the question.
 
-VIKTIGT: 
-- Dataframen heter 'df' och finns redan i minnet
-- Svara ENDAST med Python-kod, ingen förklaring
-- Koden ska returnera antingen en DataFrame eller en sträng med svaret
-- Använd variabler 'result' för slutresultatet
-- För siffror: formatera med tusentalsavgränsare (f"{{value:,}} kr")
+IMPORTANT: 
+- The dataframe is called 'df' and already exists in memory
+- Answer ONLY with Python code, no explanation
+- The code should return either a DataFrame or a string with the answer
+- Use variable 'result' for the final result
+- For numbers: format with thousand separators (f"{{value:,}} kr")
 
 Dataframe info:
 {df_info}
 
-Användarens fråga: {question}
+User's question: {question}
 
-Generera Python-kod som svarar på frågan:"""
+Generate Python code that answers the question:"""
 
     try:
         # Call Claude API
@@ -69,14 +69,14 @@ Generera Python-kod som svarar på frågan:"""
         
         # Generate explanation
         if isinstance(result, pd.DataFrame):
-            explanation = f"AI svarade med {len(result)} rader data"
+            explanation = f"AI returned {len(result)} rows of data"
             return result, explanation, generated_code
         else:
             explanation = str(result)
             return pd.DataFrame(), explanation, generated_code
             
     except Exception as e:
-        error_msg = f"AI-fel: {str(e)}"
+        error_msg = f"AI error: {str(e)}"
         return pd.DataFrame(), error_msg, ""
 
 
@@ -100,11 +100,9 @@ def execute_code_safely(code, df):
         result = local_vars.get('result')
         
         if result is None:
-            # If no result variable, try to get last expression value
-            # This is a simple fallback
-            return "Kod kördes men inget resultat returnerades"
+            return "Code executed but no result returned"
         
         return result
         
     except Exception as e:
-        raise Exception(f"Kod-exekveringsfel: {str(e)}")
+        raise Exception(f"Code execution error: {str(e)}")

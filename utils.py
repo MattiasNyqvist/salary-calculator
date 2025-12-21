@@ -10,65 +10,66 @@ def parse_salary_query(query, df):
     """
     query = query.lower().strip()
     
-    # Pattern: "vem tjänar mest på/i [department]"
-    if match := re.search(r'vem tjänar mest (?:på|i) (\w+)', query):
+    # Pattern: "who earns most in/at [department]"
+    if match := re.search(r'(?:vem tjänar mest|who earns most) (?:på|i|in|at) (\w+)', query):
         dept = match.group(1).capitalize()
         result = df[df['department'].str.lower() == dept.lower()]
         if not result.empty:
             top_earner = result.nlargest(1, 'salary').iloc[0]
-            explanation = f"Högst lön på {dept}: {top_earner['name']} ({top_earner['role']}) - {top_earner['salary']:,.0f} kr"
+            explanation = f"Highest salary in {dept}: {top_earner['name']} ({top_earner['role']}) - {top_earner['salary']:,.0f} kr"
             return result.nlargest(5, 'salary'), explanation
-        return pd.DataFrame(), f"Hittade ingen avdelning '{dept}'"
+        return pd.DataFrame(), f"No department found: '{dept}'"
     
-    # Pattern: "vem tjänar mest" (overall)
-    if 'vem tjänar mest' in query and 'på' not in query and 'i' not in query:
-        top_earner = df.nlargest(1, 'salary').iloc[0]
-        explanation = f"Högst lön: {top_earner['name']} ({top_earner['department']}, {top_earner['role']}) - {top_earner['salary']:,.0f} kr"
-        return df.nlargest(5, 'salary'), explanation
+    # Pattern: "who earns most" (overall)
+    if 'vem tjänar mest' in query or 'who earns most' in query:
+        if 'på' not in query and 'i' not in query and 'in' not in query and 'at' not in query:
+            top_earner = df.nlargest(1, 'salary').iloc[0]
+            explanation = f"Highest salary: {top_earner['name']} ({top_earner['department']}, {top_earner['role']}) - {top_earner['salary']:,.0f} kr"
+            return df.nlargest(5, 'salary'), explanation
     
-    # Pattern: "alla med lön över/under [amount]"
-    if match := re.search(r'lön över (\d+)', query):
+    # Pattern: "all with salary over/under [amount]"
+    if match := re.search(r'(?:lön över|salary over|över|over) (\d+)', query):
         amount = int(match.group(1))
         result = df[df['salary'] > amount]
-        explanation = f"Hittade {len(result)} personer med lön över {amount:,.0f} kr"
+        explanation = f"Found {len(result)} people with salary over {amount:,.0f} kr"
         return result, explanation
     
-    if match := re.search(r'lön under (\d+)', query):
+    if match := re.search(r'(?:lön under|salary under|under) (\d+)', query):
         amount = int(match.group(1))
         result = df[df['salary'] < amount]
-        explanation = f"Hittade {len(result)} personer med lön under {amount:,.0f} kr"
+        explanation = f"Found {len(result)} people with salary under {amount:,.0f} kr"
         return result, explanation
     
-    # Pattern: "hur många på/i [department]"
-    if match := re.search(r'hur många (?:på|i|jobbar på|jobbar i) (\w+)', query):
+    # Pattern: "how many in/at [department]"
+    if match := re.search(r'(?:hur många|how many) (?:på|i|in|at|work in|work at) (\w+)', query):
         dept = match.group(1).capitalize()
         result = df[df['department'].str.lower() == dept.lower()]
-        explanation = f"{len(result)} personer jobbar på {dept}"
+        explanation = f"{len(result)} people work in {dept}"
         return result, explanation
     
-    # Pattern: "genomsnitt [department]"
-    if match := re.search(r'genomsnitt(?:slön)? (?:på|i|för)? ?(\w+)?', query):
+    # Pattern: "average [department]"
+    if match := re.search(r'(?:genomsnitt|average)(?:slön)? (?:på|i|in|at|for)? ?(\w+)?', query):
         if match.group(1):
             dept = match.group(1).capitalize()
             result = df[df['department'].str.lower() == dept.lower()]
             if not result.empty:
                 avg = result['salary'].mean()
-                explanation = f"Genomsnittslön på {dept}: {avg:,.0f} kr"
+                explanation = f"Average salary in {dept}: {avg:,.0f} kr"
                 return result, explanation
         else:
             avg = df['salary'].mean()
-            explanation = f"Genomsnittslön totalt: {avg:,.0f} kr"
+            explanation = f"Total average salary: {avg:,.0f} kr"
             return df, explanation
     
-    # Pattern: "visa alla [department]"
-    if match := re.search(r'visa alla (?:på|i|från)? ?(\w+)', query):
+    # Pattern: "show all [department]"
+    if match := re.search(r'(?:visa alla|show all) (?:på|i|in|at|from)? ?(\w+)', query):
         dept = match.group(1).capitalize()
         result = df[df['department'].str.lower() == dept.lower()]
-        explanation = f"Visar alla ({len(result)}) från {dept}"
+        explanation = f"Showing all ({len(result)}) from {dept}"
         return result, explanation
     
     # Default: no match
-    return pd.DataFrame(), "Förstod inte frågan. Prova: 'Vem tjänar mest?', 'Alla med lön över 50000', 'Hur många på IT?'"
+    return pd.DataFrame(), "Could not understand question. Try: 'Who earns most?', 'All with salary over 50000', 'How many in IT?'"
 
 
 def calculate_stats(df):
@@ -93,7 +94,6 @@ def create_excel_report(df, stats):
     output = io.BytesIO()
     
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Get workbook and add formats
         workbook = writer.book
         
         # Define formats
@@ -137,7 +137,6 @@ def create_excel_report(df, stats):
         })
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
         
-        # Format summary sheet
         worksheet = writer.sheets['Summary']
         worksheet.set_column('A:A', 25)
         worksheet.set_column('B:B', 20)
@@ -145,12 +144,11 @@ def create_excel_report(df, stats):
         # Sheet 2: All Data
         df.to_excel(writer, sheet_name='All Data', index=False)
         
-        # Format all data sheet
         worksheet = writer.sheets['All Data']
-        worksheet.set_column('A:A', 20)  # Name
-        worksheet.set_column('B:B', 15)  # Department
-        worksheet.set_column('C:C', 20)  # Role
-        worksheet.set_column('D:D', 15)  # Salary
+        worksheet.set_column('A:A', 20)
+        worksheet.set_column('B:B', 15)
+        worksheet.set_column('C:C', 20)
+        worksheet.set_column('D:D', 15)
         
         # Sheet 3: Department Stats
         dept_stats = df.groupby('department').agg({
@@ -187,7 +185,6 @@ def create_simple_excel(df):
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, sheet_name='Data', index=False)
         
-        # Auto-adjust columns
         worksheet = writer.sheets['Data']
         for idx, col in enumerate(df.columns):
             max_length = max(
@@ -198,3 +195,78 @@ def create_simple_excel(df):
     
     output.seek(0)
     return output
+
+
+def load_benchmarks():
+    """Load salary benchmark data."""
+    try:
+        benchmarks = pd.read_csv('data/salary_benchmarks.csv')
+        return benchmarks
+    except FileNotFoundError:
+        return None
+
+
+def calculate_benchmark_comparison(df, benchmarks):
+    """
+    Compare salaries against industry benchmarks.
+    Returns dataframe with comparison metrics.
+    """
+    if benchmarks is None:
+        return None
+    
+    comparison = df.merge(
+        benchmarks[['role', 'industry_avg', 'industry_min', 'industry_max']],
+        on='role',
+        how='left'
+    )
+    
+    comparison['diff_from_avg'] = comparison['salary'] - comparison['industry_avg']
+    comparison['diff_pct'] = ((comparison['salary'] - comparison['industry_avg']) / comparison['industry_avg'] * 100).round(1)
+    
+    def categorize_salary(row):
+        if pd.isna(row['industry_avg']):
+            return 'No benchmark'
+        elif row['salary'] < row['industry_min']:
+            return 'Below market'
+        elif row['salary'] > row['industry_max']:
+            return 'Above market'
+        elif row['salary'] < row['industry_avg']:
+            return 'Below average'
+        else:
+            return 'Above average'
+    
+    comparison['market_position'] = comparison.apply(categorize_salary, axis=1)
+    
+    return comparison
+
+
+def generate_benchmark_insights(comparison_df):
+    """Generate insights from benchmark comparison."""
+    insights = []
+    
+    if comparison_df is None or comparison_df.empty:
+        return ["No benchmark data available"]
+    
+    below_market = len(comparison_df[comparison_df['market_position'] == 'Below market'])
+    above_market = len(comparison_df[comparison_df['market_position'] == 'Above market'])
+    
+    if below_market > 0:
+        insights.append(f"WARNING: {below_market} people below market level (turnover risk)")
+    
+    if above_market > 0:
+        insights.append(f"INFO: {above_market} people above market level (higher cost)")
+    
+    avg_diff = comparison_df['diff_from_avg'].mean()
+    if not pd.isna(avg_diff):
+        if avg_diff > 0:
+            insights.append(f"STAT: Company pays average {abs(avg_diff):,.0f} kr ABOVE market")
+        else:
+            insights.append(f"STAT: Company pays average {abs(avg_diff):,.0f} kr BELOW market")
+    
+    biggest_gaps = comparison_df.nlargest(3, 'diff_from_avg')[['name', 'role', 'diff_from_avg']]
+    if not biggest_gaps.empty:
+        insights.append("TOP: Biggest positive deviations:")
+        for _, row in biggest_gaps.iterrows():
+            insights.append(f"  - {row['name']} ({row['role']}): +{row['diff_from_avg']:,.0f} kr")
+    
+    return insights
