@@ -13,6 +13,7 @@ from utils import (
     generate_benchmark_insights
 )
 from ai_query import query_with_ai
+from recommendations import generate_ai_recommendations, get_priority_color
 
 # Page config
 st.set_page_config(
@@ -227,11 +228,12 @@ with st.expander("Example questions"):
         """)
 
 # Main content - Tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Overview", 
     "By Department", 
     "Analysis",
     "Benchmarking",
+    "AI Recommendations",
     "Search Employees"
 ])
 
@@ -521,6 +523,79 @@ with tab4:
             st.plotly_chart(fig2, use_container_width=True)
 
 with tab5:
+    st.header("AI Recommendations")
+    
+    st.markdown("""
+    AI-powered analysis of your salary data with actionable recommendations 
+    to improve retention, manage costs, and ensure market competitiveness.
+    """)
+    
+    if st.button("Generate AI Recommendations", type="primary"):
+        with st.spinner("AI analyzing salary data..."):
+            recommendations = generate_ai_recommendations(filtered_df, benchmark_comparison)
+            
+            if recommendations:
+                st.success(f"Generated {len(recommendations)} recommendations")
+                
+                # Group by priority
+                high_priority = [r for r in recommendations if r['priority'] == 'HIGH']
+                medium_priority = [r for r in recommendations if r['priority'] == 'MEDIUM']
+                low_priority = [r for r in recommendations if r['priority'] == 'LOW']
+                
+                # Display HIGH priority first
+                if high_priority:
+                    st.subheader("High Priority")
+                    for rec in high_priority:
+                        color = get_priority_color(rec['priority'])
+                        
+                        st.markdown(f"""
+                        <div style='background-color: #fee2e2; padding: 1rem; border-radius: 8px; border-left: 4px solid {color}; margin-bottom: 1rem;'>
+                            <div style='margin-bottom: 0.5rem;'>
+                                <span style='background-color: {color}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; margin-right: 0.5rem;'>{rec['priority']}</span>
+                                <span style='background-color: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 500; font-size: 0.75rem;'>{rec['category']}</span>
+                            </div>
+                            <p style='margin: 0; color: #1f2937; line-height: 1.6;'>{rec['recommendation']}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Display MEDIUM priority
+                if medium_priority:
+                    st.subheader("Medium Priority")
+                    for rec in medium_priority:
+                        color = get_priority_color(rec['priority'])
+                        
+                        st.markdown(f"""
+                        <div style='background-color: #fef3c7; padding: 1rem; border-radius: 8px; border-left: 4px solid {color}; margin-bottom: 1rem;'>
+                            <div style='margin-bottom: 0.5rem;'>
+                                <span style='background-color: {color}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; margin-right: 0.5rem;'>{rec['priority']}</span>
+                                <span style='background-color: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 500; font-size: 0.75rem;'>{rec['category']}</span>
+                            </div>
+                            <p style='margin: 0; color: #1f2937; line-height: 1.6;'>{rec['recommendation']}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Display LOW priority
+                if low_priority:
+                    st.subheader("Low Priority")
+                    for rec in low_priority:
+                        color = get_priority_color(rec['priority'])
+                        
+                        st.markdown(f"""
+                        <div style='background-color: #d1fae5; padding: 1rem; border-radius: 8px; border-left: 4px solid {color}; margin-bottom: 1rem;'>
+                            <div style='margin-bottom: 0.5rem;'>
+                                <span style='background-color: {color}; color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.75rem; margin-right: 0.5rem;'>{rec['priority']}</span>
+                                <span style='background-color: #f3f4f6; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 500; font-size: 0.75rem;'>{rec['category']}</span>
+                            </div>
+                            <p style='margin: 0; color: #1f2937; line-height: 1.6;'>{rec['recommendation']}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.error("Could not generate recommendations. Check API key configuration.")
+    
+    st.markdown("---")
+    st.info("Tip: AI recommendations are generated based on current salary data and benchmark comparisons. Run this analysis monthly to track progress.")
+
+with tab6:
     st.header("Search Employees")
     
     search = st.text_input("Search by name, department or role:")
