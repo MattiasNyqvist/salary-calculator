@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 from utils import parse_salary_query, calculate_stats, create_excel_report, create_simple_excel
+from ai_query import query_with_ai
 
 # Page config
 st.set_page_config(
@@ -13,7 +14,7 @@ st.set_page_config(
 
 # Title
 st.title("💰 Salary Analyzer Pro")
-st.markdown("Analysera lönedata med AI-liknande natural language queries")
+st.markdown("Analysera lönedata med AI-powered natural language queries")
 
 # Sidebar - Data Source
 st.sidebar.header("📂 Datakälla")
@@ -132,41 +133,90 @@ with col2:
     )
 
 # Natural Language Query (TOP OF PAGE)
-st.header("🤖 Fråga om löner (Natural Language)")
+st.header("🤖 Fråga om löner")
+
+# AI Mode Toggle
+query_mode = st.radio(
+    "Query Mode:",
+    ["🧠 AI Mode (Smart)", "⚡ Regex Mode (Snabb)"],
+    horizontal=True,
+    help="AI Mode: Förstår komplexa frågor med Claude AI | Regex Mode: Snabbare men enklare pattern matching"
+)
 
 col1, col2 = st.columns([3, 1])
 
 with col1:
-    query = st.text_input(
-        "Ställ en fråga:",
-        placeholder="T.ex: 'Vem tjänar mest på IT?', 'Alla med lön över 50000', 'Hur många på Finance?'",
-        label_visibility="collapsed"
-    )
+    if query_mode == "🧠 AI Mode (Smart)":
+        query = st.text_input(
+            "Ställ en fråga:",
+            placeholder="T.ex: 'Vilka på IT tjänar mer än genomsnittet?', 'Vem har jobbat längst?', 'Topp 3 avdelningar efter kostnad'",
+            label_visibility="collapsed",
+            key="ai_query"
+        )
+    else:
+        query = st.text_input(
+            "Ställ en fråga:",
+            placeholder="T.ex: 'Vem tjänar mest på IT?', 'Alla med lön över 50000', 'Hur många på Finance?'",
+            label_visibility="collapsed",
+            key="regex_query"
+        )
 
 with col2:
     search_button = st.button("🔍 Sök", use_container_width=True)
 
 if query and search_button:
-    result_df, explanation = parse_salary_query(query, filtered_df)
-    
-    st.info(f"**Svar:** {explanation}")
-    
-    if not result_df.empty:
-        st.dataframe(result_df, use_container_width=True)
+    if query_mode == "🧠 AI Mode (Smart)":
+        # AI-powered query
+        with st.spinner("AI tänker..."):
+            try:
+                result_df, explanation, generated_code = query_with_ai(query, filtered_df)
+                
+                st.success(f"**AI Svar:** {explanation}")
+                
+                if not result_df.empty:
+                    st.dataframe(result_df, use_container_width=True)
+                
+                # Show generated code in expander
+                with st.expander("🔍 Visa genererad kod"):
+                    st.code(generated_code, language='python')
+                    
+            except Exception as e:
+                st.error(f"AI-fel: {str(e)}")
+                st.info("💡 Prova Regex Mode för enklare frågor, eller omformulera frågan.")
+    else:
+        # Regex-based query (original)
+        result_df, explanation = parse_salary_query(query, filtered_df)
+        
+        st.info(f"**Svar:** {explanation}")
+        
+        if not result_df.empty:
+            st.dataframe(result_df, use_container_width=True)
     
     st.markdown("---")
 
 # Example queries
 with st.expander("💡 Exempel på frågor du kan ställa"):
-    st.markdown("""
-    - **Vem tjänar mest?**
-    - **Vem tjänar mest på IT?**
-    - **Alla med lön över 50000**
-    - **Alla med lön under 40000**
-    - **Hur många på Finance?**
-    - **Genomsnittslön IT**
-    - **Visa alla på HR**
-    """)
+    if query_mode == "🧠 AI Mode (Smart)":
+        st.markdown("""
+        **AI Mode kan svara på komplexa frågor:**
+        - **Vilka på IT tjänar mer än genomsnittet i Finance?**
+        - **Vem har jobbat längst och hur mycket tjänar hen?**
+        - **Visa topp 3 avdelningar efter total lönekostnad**
+        - **Hur många procent av HR tjänar över 45000?**
+        - **Vilka roller har högst medianlön?**
+        - **Jämför min lön (50000) med genomsnittet per avdelning**
+        """)
+    else:
+        st.markdown("""
+        **Regex Mode - enkla, snabba frågor:**
+        - **Vem tjänar mest?**
+        - **Vem tjänar mest på IT?**
+        - **Alla med lön över 50000**
+        - **Alla med lön under 40000**
+        - **Hur många på Finance?**
+        - **Genomsnittslön IT**
+        - **Visa alla på HR**
+        """)
 
 # Main content - Tabs
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -301,8 +351,8 @@ with tab4:
 st.markdown("---")
 st.markdown("""
 **💡 Tips:** 
-- Använd natural language query högst upp för snabba frågor
+- **AI Mode**: Ställ komplexa frågor - AI förstår och genererar kod
+- **Regex Mode**: Snabbare för enkla, vanliga frågor
 - Filtrera data med sidomenyn
-- Ladda upp egen data för att analysera dina egna löner
 - Exportera till Excel för vidare analys
 """)
