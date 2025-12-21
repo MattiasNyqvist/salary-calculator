@@ -1,5 +1,7 @@
 import pandas as pd
 import re
+import io
+from datetime import datetime
 
 def parse_salary_query(query, df):
     """
@@ -81,3 +83,118 @@ def calculate_stats(df):
         'departments': df['department'].nunique(),
     }
     return stats
+
+
+def create_excel_report(df, stats):
+    """
+    Create comprehensive Excel report with multiple sheets.
+    Returns BytesIO object for download.
+    """
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Get workbook and add formats
+        workbook = writer.book
+        
+        # Define formats
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#4472C4',
+            'font_color': 'white',
+            'border': 1
+        })
+        
+        currency_format = workbook.add_format({
+            'num_format': '#,##0 kr',
+            'border': 1
+        })
+        
+        number_format = workbook.add_format({
+            'num_format': '#,##0',
+            'border': 1
+        })
+        
+        # Sheet 1: Summary Stats
+        summary_df = pd.DataFrame({
+            'Metric': [
+                'Total Employees',
+                'Average Salary',
+                'Median Salary',
+                'Min Salary',
+                'Max Salary',
+                'Total Monthly Cost',
+                'Number of Departments'
+            ],
+            'Value': [
+                stats['total_employees'],
+                f"{stats['avg_salary']:,.0f} kr",
+                f"{stats['median_salary']:,.0f} kr",
+                f"{stats['min_salary']:,.0f} kr",
+                f"{stats['max_salary']:,.0f} kr",
+                f"{stats['total_cost']:,.0f} kr",
+                stats['departments']
+            ]
+        })
+        summary_df.to_excel(writer, sheet_name='Summary', index=False)
+        
+        # Format summary sheet
+        worksheet = writer.sheets['Summary']
+        worksheet.set_column('A:A', 25)
+        worksheet.set_column('B:B', 20)
+        
+        # Sheet 2: All Data
+        df.to_excel(writer, sheet_name='All Data', index=False)
+        
+        # Format all data sheet
+        worksheet = writer.sheets['All Data']
+        worksheet.set_column('A:A', 20)  # Name
+        worksheet.set_column('B:B', 15)  # Department
+        worksheet.set_column('C:C', 20)  # Role
+        worksheet.set_column('D:D', 15)  # Salary
+        
+        # Sheet 3: Department Stats
+        dept_stats = df.groupby('department').agg({
+            'salary': ['mean', 'median', 'min', 'max', 'count']
+        }).round(0)
+        dept_stats.columns = ['Average', 'Median', 'Min', 'Max', 'Count']
+        dept_stats.to_excel(writer, sheet_name='By Department')
+        
+        # Sheet 4: Role Stats
+        role_stats = df.groupby('role').agg({
+            'salary': ['mean', 'count']
+        }).round(0)
+        role_stats.columns = ['Average Salary', 'Count']
+        role_stats = role_stats.sort_values('Average Salary', ascending=False)
+        role_stats.to_excel(writer, sheet_name='By Role')
+        
+        # Sheet 5: Outliers
+        mean = df['salary'].mean()
+        std = df['salary'].std()
+        outliers = df[
+            (df['salary'] > mean + 2*std) | 
+            (df['salary'] < mean - 2*std)
+        ]
+        outliers.to_excel(writer, sheet_name='Outliers', index=False)
+    
+    output.seek(0)
+    return output
+
+
+def create_simple_excel(df):
+    """Create simple Excel file from dataframe."""
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='Data', index=False)
+        
+        # Auto-adjust columns
+        worksheet = writer.sheets['Data']
+        for idx, col in enumerate(df.columns):
+            max_length = max(
+                df[col].astype(str).map(len).max(),
+                len(col)
+            )
+            worksheet.set_column(idx, idx, max_length + 2)
+    
+    output.seek(0)
+    return output

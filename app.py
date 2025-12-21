@@ -2,8 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
-import io
-from utils import parse_salary_query, calculate_stats
+from utils import parse_salary_query, calculate_stats, create_excel_report, create_simple_excel
 
 # Page config
 st.set_page_config(
@@ -101,6 +100,36 @@ filtered_df = df[
     (df['salary'] >= salary_range[0]) &
     (df['salary'] <= salary_range[1])
 ]
+
+# Export section
+st.sidebar.markdown("---")
+st.sidebar.header("📥 Export")
+
+stats = calculate_stats(filtered_df)
+
+col1, col2 = st.sidebar.columns(2)
+
+with col1:
+    # Simple export
+    simple_excel = create_simple_excel(filtered_df)
+    st.download_button(
+        label="📊 Data",
+        data=simple_excel,
+        file_name=f"salary_data_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
+
+with col2:
+    # Full report
+    report_excel = create_excel_report(filtered_df, stats)
+    st.download_button(
+        label="📈 Rapport",
+        data=report_excel,
+        file_name=f"salary_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True
+    )
 
 # Natural Language Query (TOP OF PAGE)
 st.header("🤖 Fråga om löner (Natural Language)")
@@ -275,4 +304,5 @@ st.markdown("""
 - Använd natural language query högst upp för snabba frågor
 - Filtrera data med sidomenyn
 - Ladda upp egen data för att analysera dina egna löner
+- Exportera till Excel för vidare analys
 """)
