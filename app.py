@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 from utils import (
     parse_salary_query, 
@@ -20,53 +21,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Custom CSS for professional look
-st.markdown("""
-<style>
-    .main {
-        background-color: #f8f9fa;
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #ffffff;
-        border-radius: 4px;
-        padding: 8px 16px;
-        font-weight: 500;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #4472C4;
-        color: white;
-    }
-    h1 {
-        color: #1e3a8a;
-        font-weight: 700;
-    }
-    h2 {
-        color: #2563eb;
-        font-weight: 600;
-        border-bottom: 2px solid #e5e7eb;
-        padding-bottom: 8px;
-    }
-    h3 {
-        color: #3b82f6;
-        font-weight: 600;
-    }
-    .stMetric {
-        background-color: white;
-        padding: 16px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .stDataFrame {
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # Title
 st.title("Salary Analyzer Pro")
@@ -200,7 +154,7 @@ query_mode = st.radio(
     help="AI Mode: Understands complex questions | Regex Mode: Faster but simpler pattern matching"
 )
 
-col1, col2 = st.columns([3, 1])
+col1, col2 = st.columns([4, 1])
 
 with col1:
     if query_mode == "AI Mode (Smart)":
@@ -230,7 +184,7 @@ if query and search_button:
                 st.success(f"**AI Answer:** {explanation}")
                 
                 if not result_df.empty:
-                    st.dataframe(result_df, use_container_width=True)
+                    st.dataframe(result_df, use_container_width=True, hide_index=True)
                 
                 with st.expander("View generated code"):
                     st.code(generated_code, language='python')
@@ -244,7 +198,7 @@ if query and search_button:
         st.info(f"**Answer:** {explanation}")
         
         if not result_df.empty:
-            st.dataframe(result_df, use_container_width=True)
+            st.dataframe(result_df, use_container_width=True, hide_index=True)
     
     st.markdown("---")
 
@@ -288,7 +242,7 @@ with tab1:
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Total Employees", len(filtered_df))
+        st.metric("Total Employees", f"{len(filtered_df):,}")
     
     with col2:
         avg_salary = filtered_df['salary'].mean()
@@ -302,20 +256,20 @@ with tab1:
         total_cost = filtered_df['salary'].sum()
         st.metric("Total Monthly Cost", f"{total_cost:,.0f} kr")
     
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Salary distribution
     st.subheader("Salary Distribution")
     fig = px.histogram(
         filtered_df, 
         x='salary',
         nbins=20,
-        title="Distribution of Salaries",
-        labels={'salary': 'Salary (kr)', 'count': 'Count'},
-        color_discrete_sequence=['#4472C4']
+        labels={'salary': 'Salary (kr)', 'count': 'Count'}
     )
     fig.update_layout(
         plot_bgcolor='white',
         paper_bgcolor='white',
-        font=dict(family="Arial, sans-serif")
+        margin=dict(l=0, r=0, t=10, b=0)
     )
     st.plotly_chart(fig, use_container_width=True)
     
@@ -325,15 +279,13 @@ with tab1:
         filtered_df,
         x='department',
         y='salary',
-        title="Box Plot of Salaries by Department",
-        labels={'department': 'Department', 'salary': 'Salary (kr)'},
-        color='department'
+        labels={'department': 'Department', 'salary': 'Salary (kr)'}
     )
     fig_box.update_layout(
         plot_bgcolor='white',
         paper_bgcolor='white',
         showlegend=False,
-        font=dict(family="Arial, sans-serif")
+        margin=dict(l=0, r=0, t=10, b=0)
     )
     st.plotly_chart(fig_box, use_container_width=True)
 
@@ -347,22 +299,27 @@ with tab2:
     dept_stats.columns = ['Average', 'Median', 'Min', 'Max', 'Count']
     st.dataframe(dept_stats, use_container_width=True)
     
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Bar chart
     avg_by_dept = filtered_df.groupby('department')['salary'].mean().reset_index()
-    fig = px.bar(
-        avg_by_dept,
-        x='department',
-        y='salary',
-        title="Average Salary by Department",
-        labels={'department': 'Department', 'salary': 'Average Salary (kr)'},
-        color='salary',
-        color_continuous_scale='Blues'
-    )
+    avg_by_dept = avg_by_dept.sort_values('salary', ascending=True)
+    
+    fig = go.Figure(go.Bar(
+        x=avg_by_dept['salary'],
+        y=avg_by_dept['department'],
+        orientation='h',
+        text=avg_by_dept['salary'].apply(lambda x: f'{x:,.0f} kr'),
+        textposition='outside'
+    ))
+    
     fig.update_layout(
         plot_bgcolor='white',
         paper_bgcolor='white',
-        showlegend=False,
-        font=dict(family="Arial, sans-serif")
+        xaxis=dict(showgrid=True, gridcolor='#e5e5e5', title='Average Salary (kr)'),
+        yaxis=dict(showgrid=False, title='Department'),
+        margin=dict(l=0, r=0, t=10, b=0),
+        height=400
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -381,10 +338,13 @@ with tab3:
         st.subheader("Salaries Outside Normal Range (±2 std)")
         st.dataframe(
             outliers[['name', 'department', 'role', 'salary']],
-            use_container_width=True
+            use_container_width=True,
+            hide_index=True
         )
     else:
         st.success("No outliers found")
+    
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Salary by role
     st.subheader("Salary by Role")
@@ -393,14 +353,36 @@ with tab3:
     role_stats = role_stats.sort_values('Average', ascending=False)
     st.dataframe(role_stats, use_container_width=True)
     
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Salary percentiles
-    st.subheader("Salary Percentiles")
-    percentiles = filtered_df['salary'].quantile([0.1, 0.25, 0.5, 0.75, 0.9]).round(0)
-    perc_df = pd.DataFrame({
-        'Percentile': ['10%', '25%', '50% (Median)', '75%', '90%'],
-        'Salary (kr)': percentiles.values
-    })
-    st.dataframe(perc_df, use_container_width=True)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("Salary Percentiles")
+        percentiles = filtered_df['salary'].quantile([0.1, 0.25, 0.5, 0.75, 0.9]).round(0)
+        perc_df = pd.DataFrame({
+            'Percentile': ['10%', '25%', '50% (Median)', '75%', '90%'],
+            'Salary (kr)': percentiles.values
+        })
+        st.dataframe(perc_df, use_container_width=True, hide_index=True)
+    
+    with col2:
+        st.subheader("Department Distribution")
+        dept_count = filtered_df.groupby('department').size().reset_index(name='Employees')
+        dept_count = dept_count.sort_values('Employees', ascending=False)
+        
+        fig_pie = px.pie(
+            dept_count,
+            values='Employees',
+            names='department'
+        )
+        fig_pie.update_layout(
+            margin=dict(l=0, r=0, t=0, b=0),
+            height=300,
+            showlegend=True
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
 
 with tab4:
     st.header("Salary Benchmarking")
@@ -441,17 +423,20 @@ with tab4:
                 'Diff (kr)', 'Diff (%)', 'Position'
             ]
             
-            # Color code based on position
             def highlight_position(row):
                 if row['Position'] == 'Below market':
                     return ['background-color: #fee2e2'] * len(row)
                 elif row['Position'] == 'Above market':
-                    return ['background-color: #dcfce7'] * len(row)
+                    return ['background-color: #d1fae5'] * len(row)
+                elif row['Position'] == 'Below average':
+                    return ['background-color: #fef3c7'] * len(row)
+                elif row['Position'] == 'Above average':
+                    return ['background-color: #dbeafe'] * len(row)
                 else:
                     return [''] * len(row)
             
             styled_df = display_df.style.apply(highlight_position, axis=1)
-            st.dataframe(styled_df, use_container_width=True)
+            st.dataframe(styled_df, use_container_width=True, hide_index=True)
         
         st.markdown("---")
         
@@ -459,29 +444,20 @@ with tab4:
         st.subheader("Visualization")
         
         if benchmark_comparison is not None:
-            # Scatter plot: Actual vs Benchmark
+            # Scatter plot
             fig = px.scatter(
                 benchmark_comparison,
                 x='industry_avg',
                 y='salary',
                 color='market_position',
                 hover_data=['name', 'role'],
-                title="Salary vs Industry Benchmark",
                 labels={
                     'industry_avg': 'Industry Average (kr)',
                     'salary': 'Actual Salary (kr)',
                     'market_position': 'Position'
-                },
-                color_discrete_map={
-                    'Below market': '#ef4444',
-                    'Below average': '#f97316',
-                    'Above average': '#3b82f6',
-                    'Above market': '#22c55e',
-                    'No benchmark': '#9ca3af'
                 }
             )
             
-            # Add diagonal line
             max_val = max(
                 benchmark_comparison['salary'].max(),
                 benchmark_comparison['industry_avg'].max()
@@ -489,54 +465,51 @@ with tab4:
             fig.add_shape(
                 type="line",
                 x0=0, y0=0, x1=max_val, y1=max_val,
-                line=dict(color="gray", dash="dash", width=2)
+                line=dict(color="#94a3b8", dash="dash", width=2)
             )
             
             fig.update_layout(
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                font=dict(family="Arial, sans-serif")
+                margin=dict(l=0, r=0, t=10, b=0)
             )
             
             st.plotly_chart(fig, use_container_width=True)
             
-            # Bar chart: Department average vs benchmark
+            st.markdown("<br>", unsafe_allow_html=True)
+            
+            # Bar chart
             dept_comparison = benchmark_comparison.groupby('department').agg({
                 'salary': 'mean',
                 'industry_avg': 'mean'
             }).round(0).reset_index()
             
-            dept_comparison_melted = dept_comparison.melt(
-                id_vars='department',
-                value_vars=['salary', 'industry_avg'],
-                var_name='type',
-                value_name='amount'
-            )
+            fig2 = go.Figure()
             
-            fig2 = px.bar(
-                dept_comparison_melted,
-                x='department',
-                y='amount',
-                color='type',
-                barmode='group',
-                title="Average Salary by Department vs Industry",
-                labels={
-                    'department': 'Department',
-                    'amount': 'Salary (kr)',
-                    'type': 'Type'
-                },
-                color_discrete_map={
-                    'salary': '#4472C4',
-                    'industry_avg': '#ED7D31'
-                }
-            )
+            fig2.add_trace(go.Bar(
+                name='Company',
+                x=dept_comparison['department'],
+                y=dept_comparison['salary'],
+                text=dept_comparison['salary'].apply(lambda x: f'{x:,.0f}'),
+                textposition='outside'
+            ))
+            
+            fig2.add_trace(go.Bar(
+                name='Industry Benchmark',
+                x=dept_comparison['department'],
+                y=dept_comparison['industry_avg'],
+                text=dept_comparison['industry_avg'].apply(lambda x: f'{x:,.0f}'),
+                textposition='outside'
+            ))
             
             fig2.update_layout(
+                barmode='group',
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                font=dict(family="Arial, sans-serif"),
+                xaxis=dict(showgrid=False, title='Department'),
+                yaxis=dict(showgrid=True, gridcolor='#e5e5e5', title='Average Salary (kr)'),
+                margin=dict(l=0, r=0, t=10, b=0),
                 legend=dict(
-                    title="",
                     orientation="h",
                     yanchor="bottom",
                     y=1.02,
@@ -544,11 +517,6 @@ with tab4:
                     x=1
                 )
             )
-            
-            # Rename legend
-            fig2.for_each_trace(lambda t: t.update(
-                name='Company' if t.name == 'salary' else 'Industry Benchmark'
-            ))
             
             st.plotly_chart(fig2, use_container_width=True)
 
@@ -567,7 +535,7 @@ with tab5:
         
         if len(results) > 0:
             st.success(f"Found {len(results)} results")
-            st.dataframe(results, use_container_width=True)
+            st.dataframe(results, use_container_width=True, hide_index=True)
         else:
             st.warning("No results found")
     else:
@@ -575,11 +543,4 @@ with tab5:
 
 # Footer
 st.markdown("---")
-st.markdown("""
-**Tips:** 
-- **AI Mode**: Ask complex questions - AI understands and generates code
-- **Regex Mode**: Faster for simple, common questions
-- **Benchmarking**: Compare salaries against industry standards
-- Filter data using the sidebar
-- Export to Excel for further analysis
-""")
+st.markdown("**Salary Analyzer Pro** | AI-powered salary analysis platform")
