@@ -1,97 +1,65 @@
-# 💰 Salary Analyzer
+# Salary Analyzer Pro
 
-AI-powered salary analysis tool with natural language queries and interactive visualizations.
+AI-powered salary analysis and benchmarking platform that transforms HR compensation data into actionable insights.
 
-![Python](https://img.shields.io/badge/python-3.13+-blue.svg)
-![Streamlit](https://img.shields.io/badge/streamlit-1.29+-red.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Overview](overview.png)
 
-## 🎯 Features
+## Features
 
-- **Natural Language Queries**: Ask questions in plain Swedish
-  - "Vem tjänar mest på IT?"
-  - "Alla med lön över 50000"
-  - "Hur många jobbar på Finance?"
+### Natural Language Queries
+Ask questions in plain English and get instant answers:
+- "Who in IT earns more than the Finance average?"
+- "Show top 3 departments by total cost"
+- "Which roles have the highest median salary?"
 
-- **File Upload**: Analyze your own salary data (CSV/Excel)
+Powered by Claude AI with fallback to regex-based pattern matching for fast, simple queries.
 
-- **Interactive Dashboards**: 
-  - Salary distribution charts
-  - Department comparisons
-  - Outlier detection
-  - Statistical insights
+![AI Query](ai_query.png)
 
-- **Smart Filtering**: Filter by department, salary range
+### Salary Benchmarking
+Compare your company's salaries against industry standards:
+- Identify employees below/above market rate
+- Department-level comparisons
+- Visual scatter plots and bar charts
+- Automatic market position categorization
 
-## 🚀 Quick Start
+![Benchmarking](benchmarking.png)
 
-### Installation
+### AI-Powered Recommendations
+Generate concrete, actionable recommendations with one click:
+- **Retention risks**: Employees at risk of leaving due to below-market pay
+- **Cost optimization**: Departments with above-market compensation
+- **Equity analysis**: Pay gaps and fairness issues
+- **Compliance**: Salary practice improvements
+- **Market positioning**: Strategic salary adjustments
+
+Recommendations are prioritized (HIGH/MEDIUM/LOW) and categorized by type.
+
+![AI Recommendations](ai_recommendations.png)
+
+### Data Analysis & Visualization
+- Interactive dashboards with salary distributions
+- Department breakdowns and comparisons
+- Outlier detection (±2 standard deviations)
+- Salary percentiles and role-based analysis
+- Export to Excel (simple data or full reports)
+
+## Tech Stack
+
+- **Python 3.11+**
+- **Streamlit** - Web application framework
+- **Pandas** - Data manipulation and analysis
+- **Plotly** - Interactive visualizations
+- **Claude AI (Anthropic)** - Natural language processing and recommendations
+- **OpenPyXL/XlsxWriter** - Excel report generation
+
+## Installation
+
+### Prerequisites
+- Python 3.11 or higher
+- Anthropic API key (for AI features)
+
+### Setup
+
+1. **Clone the repository:**
 ```bash
-# Clone repository
-git clone https://github.com/DITT-USERNAME/salary-calculator.git
-cd salary-calculator
-
-# Create virtual environment
-python -m venv venv
-.\venv\Scripts\activate  # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run app
-streamlit run app.py
-```
-
-### Usage
-
-1. Choose data source (sample or upload your own)
-2. Ask questions using natural language
-3. Explore interactive dashboards
-4. Filter and analyze
-
-## 📊 Sample Data Format
-
-Your CSV/Excel should have these columns:
-```csv
-name,department,role,salary,employment_date
-Anna Andersson,HR,HR Manager,52000,2020-03-15
-Erik Nilsson,Finance,Controller,58000,2019-06-01
-```
-
-## 🛠️ Tech Stack
-
-- **Python 3.13+**
-- **Streamlit** - Web UI
-- **Pandas** - Data analysis
-- **Plotly** - Interactive charts
-- **Regex** - Natural language parsing
-
-## 📈 Roadmap
-
-- [ ] Add AI-powered query understanding (Claude/GPT)
-- [ ] Export reports to PDF
-- [ ] Historical trend analysis
-- [ ] Salary benchmarking
-- [ ] Multi-language support
-
-## 🤝 Use Cases
-
-Perfect for:
-- HR departments analyzing compensation
-- Managers reviewing team salaries
-- Finance teams tracking costs
-- Consultants demonstrating AI capabilities
-
-## 📝 License
-
-MIT License - feel free to use for your projects!
-
-## 👤 Author
-
-Built as part of AI transformation consulting portfolio.
-
-**Contact:** [Your LinkedIn]
-
----
-
-**⭐ If you find this useful, please star the repo!**
