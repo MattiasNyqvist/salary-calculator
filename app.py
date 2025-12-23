@@ -15,6 +15,7 @@ from utils import (
 from ai_query import query_with_ai
 from recommendations import generate_ai_recommendations, get_priority_color
 
+
 # Page config
 st.set_page_config(
     page_title="Salary Analyzer Pro",
@@ -22,6 +23,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Theme colors
+primary_color = st.get_option("theme.primaryColor") or "#2e7d32"
 
 # Title
 st.title("Salary Analyzer Pro")
@@ -63,7 +67,7 @@ def load_uploaded_data(uploaded_file):
 # Get data based on source
 if data_source == "Sample data":
     df = load_sample_data()
-    st.sidebar.success("Sample data loaded")
+    st.sidebar.info("Sample data loaded")
 else:
     uploaded_file = st.sidebar.file_uploader(
         "Upload CSV or Excel",
@@ -241,7 +245,7 @@ with tab1:
     st.header("Overview")
     
     # KPIs
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
         st.metric("Total Employees", f"{len(filtered_df):,}")
@@ -257,6 +261,14 @@ with tab1:
     with col4:
         total_cost = filtered_df['salary'].sum()
         st.metric("Total Monthly Cost", f"{total_cost:,.0f} kr")
+
+    with col5:
+        min_salary = filtered_df['salary'].min()
+        st.metric("Min Salary", f"{min_salary:,.0f} kr")
+
+    with col6:
+        max_salary = filtered_df['salary'].max()
+        st.metric("Max Salary", f"{max_salary:,.0f} kr")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -266,12 +278,11 @@ with tab1:
         filtered_df, 
         x='salary',
         nbins=20,
-        labels={'salary': 'Salary (kr)', 'count': 'Count'}
+        labels={'salary': 'Salary (kr)', 'count': 'Count'},
+        color_discrete_sequence=[primary_color]
     )
     fig.update_layout(
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        margin=dict(l=0, r=0, t=10, b=0)
+               margin=dict(l=0, r=0, t=10, b=0)
     )
     st.plotly_chart(fig, use_container_width=True)
     
