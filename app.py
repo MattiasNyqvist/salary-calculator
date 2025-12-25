@@ -21,6 +21,7 @@ from utils import (
 )
 from ai_query import query_with_ai
 from recommendations import generate_ai_recommendations, get_priority_color
+from version import __version__, __author__, __license__
 
 
 # Page config
@@ -635,5 +636,14 @@ with tab6:
         st.info("Type to search")
 
 # Footer
+# Footer
 st.markdown("---")
-st.markdown("**Salary Analyzer Pro** | AI-powered salary analysis platform")
+col1, col2, col3 = st.columns([2, 1, 1])
+with col1:
+    st.markdown("**Salary Analyzer Pro** | AI-powered analytics")
+with col2:
+    st.markdown(f"**Version:** {__version__}")
+with col3:
+    st.markdown(f"**License:** {__license__}")
+
+st.caption(f"© 2025 {__author__}")

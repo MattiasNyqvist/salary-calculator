@@ -1,15 +1,12 @@
 """
-recommendations.py Recommendation engine using Claude AI for salary data analysis.
+AI-powered recommendation generation for salary analysis
 
 Copyright (c) 2025 Mattias Nyqvist
 Licensed under the MIT License - see LICENSE file for details
 """
 
-
 import anthropic
 import os
-import streamlit as st
-from datetime import datetime
 import pandas as pd
 
 def generate_ai_recommendations(df, benchmark_comparison=None):
@@ -18,11 +15,8 @@ def generate_ai_recommendations(df, benchmark_comparison=None):
     Returns list of recommendation dictionaries with priority, category, and action.
     """
     
-    # Initialize Claude client
-    try:
-        api_key = st.secrets.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
-    except:
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+    # Initialize Claude client - prioritize .env
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
     
     if not api_key:
         return []
