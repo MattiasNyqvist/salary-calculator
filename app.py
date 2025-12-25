@@ -1,3 +1,10 @@
+"""
+app.py Primary Streamlit application for Salary Analyzer 
+
+Copyright (c) 2025 Mattias Nyqvist
+Licensed under the MIT License - see LICENSE file for details
+"""
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px

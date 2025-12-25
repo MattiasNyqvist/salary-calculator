@@ -1,3 +1,11 @@
+"""
+ai_query.py
+
+Copyright (c) 2025 Mattias Nyqvist
+Licensed under the MIT License - see LICENSE file for details
+"""
+
+
 import anthropic
 import os
 from dotenv import load_dotenv

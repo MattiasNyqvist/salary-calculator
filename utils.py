@@ -1,3 +1,10 @@
+"""
+utils.py Utility functions for salary data analysis and reporting.
+
+Copyright (c) 2025 Mattias Nyqvist
+Licensed under the MIT License - see LICENSE file for details
+"""
+
 import pandas as pd
 import re
 import io

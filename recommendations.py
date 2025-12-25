@@ -1,3 +1,11 @@
+"""
+recommendations.py Recommendation engine using Claude AI for salary data analysis.
+
+Copyright (c) 2025 Mattias Nyqvist
+Licensed under the MIT License - see LICENSE file for details
+"""
+
+
 import anthropic
 import os
 import streamlit as st
